@@ -1,10 +1,10 @@
-cflags = -ggdb -lpthread -pthread -ldl -O0 -fPIE -I./src/
+cflags = -ggdb -lpthread -pthread -ldl -O0 -fPIE -I./src/ -I./deps/id3v2lib/include/
 
 rule cc
      command = g++ $cflags -c $in -o $out
 
 rule link
-     command = cd lib/ && ar -x libasound.a && ar -x libportaudio.a && ar -x libmpg123.a && ar -qc ../libmppp.a  *.o && rm *.o && cd .. && g++ $in -o $out $cflags libmppp.a && rm -rf libmppp.a && rm *.o -rf
+     command = cd lib/ && ar -x libid3v2.a && ar -x libasound.a && ar -x libportaudio.a && ar -x libmpg123.a && ar -qc ../libmppp.a  *.o && rm *.o && cd .. && g++ $in -o $out $cflags libmppp.a && rm -rf libmppp.a && rm *.o -rf
 
 build Duration.o : cc src/Duration.cpp
 build MPEGCodec.o : cc src/MPEGCodec.cpp

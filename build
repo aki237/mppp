@@ -65,7 +65,7 @@ class Deps:
                         sys.stdout.write(ERASE_LINE)
         if self.type is "git":
             print "Fetching " + self.project
-            print commands.getoutput("git clone " + self.url + " " + self.project)
+            commands.getoutput("git clone " + self.url + " deps/" + self.project)
 
 def buildDeps():
     if not os.path.exists("archive"):
@@ -73,6 +73,7 @@ def buildDeps():
         alsa = Deps("alsa-lib.tar.gz", "alsa-lib","http://www.alsa-project.org/snapshot/files/alsa-lib-1.1.4.1.0.g5bcf4.tar.bz2", "archive")
         mpg123 = Deps("mpg123.tar.bz2", "mpg123" ,"http://www.mpg123.de/download/mpg123-1.25.0.tar.bz2", "archive")
         paudio = Deps("portaudio.tar.gz", "portaudio","http://portaudio.com/archives/pa_stable_v190600_20161030.tgz", "archive")
+        id3 = Deps("id3v2lib", "id3v2lib","https://github.com/larsbs/id3v2lib", "git")
         alsa.fetch()
         mpg123.fetch()
         paudio.fetch()
@@ -81,6 +82,7 @@ def buildDeps():
         alsa.extract()
         mpg123.extract()
         paudio.extract()
+        id3.fetch()
     if not os.path.exists("lib"):
         os.makedirs("lib")
         print "Building alsa-lib"
@@ -89,11 +91,15 @@ def buildDeps():
         commands.getoutput("cd deps/mpg123/ && ./configure --enable-static --enable-shared=no && make -j 8 && cp src/libmpg123/.libs/libmpg123.a ../../lib/")
         print "Building portaudio"
         commands.getoutput("cd deps/portaudio/ && ./configure --with-jack=no --enable-static --enable-shared=no && make -j 8 && cp lib/.libs/libportaudio.a ../../lib/")
+        print "Building id3v2lib"
+        commands.getoutput("cd deps/id3v2lib/ && mkdir -p build && cd build && cmake .. && make -j 8 && cp src/libid3v2.a ../../../lib/")
 
 def buildMppp():
     print "Building mppp"
     commands.getoutput("ninja")
 
+def clean():
+    commands.getoutput("rm -rf archive deps lib && ninja -t clean")
 args = sys.argv
 if __name__ == "__main__" :
     if len(args) < 2 :
@@ -104,3 +110,5 @@ if __name__ == "__main__" :
         buildMppp()
     elif args[1] == "deps":
         buildDeps()
+    elif args[1] == "clean":
+        clean()
