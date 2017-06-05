@@ -10,6 +10,6 @@ build Duration.o : cc src/Duration.cpp
 build MPEGCodec.o : cc src/MPEGCodec.cpp
 build Device.o : cc src/Device.cpp
 build main.o : cc src/main.cpp
-build mppp : link libmppp.a Duration.o MPEGCodec.o Device.o main.o
+build mppp : link Duration.o MPEGCodec.o Device.o main.o
 
 default mppp
