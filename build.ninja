@@ -1,0 +1,15 @@
+cflags = -ggdb -lpthread -pthread -ldl -O0 -fPIE -I./src/
+
+rule cc
+     command = g++ $cflags -c $in -o $out
+
+rule link
+     command = cd lib/ && ar -x libasound.a && ar -x libportaudio.a && ar -x libmpg123.a && ar -qc ../libmppp.a  *.o && rm *.o && cd .. && g++ $in -o $out $cflags libmppp.a && rm -rf libmppp.a && rm *.o -rf
+
+build Duration.o : cc src/Duration.cpp
+build MPEGCodec.o : cc src/MPEGCodec.cpp
+build Device.o : cc src/Device.cpp
+build main.o : cc src/main.cpp
+build mppp : link libmppp.a Duration.o MPEGCodec.o Device.o main.o
+
+default mppp

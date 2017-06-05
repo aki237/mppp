@@ -1,0 +1,106 @@
+#!/usr/bin/python2
+# Copyright (C) 2017 Akilan Elango <akilan1997@gmail.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import requests
+from os import path
+import os
+import sys
+import commands
+# coding=utf-8
+
+class Deps:
+    def __init__(self, project, name ,url, t):
+        self.project = project
+        self.url = url
+        self.type = t
+        self.name= name
+    def extract(self):
+        if self.type is not "archive":
+            print "Error : Not an archive"
+        if not os.path.exists("deps/"+self.name):
+            os.makedirs("deps/" + self.name)
+        fn, ext = os.path.splitext(self.project)
+        if ext == ".zip":
+            commands.getoutput("unzip archive/%s -d deps/" % self.project)
+            return
+        if ext == ".gz" or ext == ".xz":
+            commands.getoutput("tar xvf archive/" + self.project + " -C deps/" + self.name + "/ --strip-components 1")
+            return
+        if ext == ".bz2" or ext == ".bz":
+            commands.getoutput("tar xvfj archive/" + self.project + " -C deps/" + self.name + "/ --strip-components 1")
+            return
+        else:
+            print "Don't know how to extract %s archive" %  ext
+    def fetch(self):
+        if self.type is "archive":
+            print "Fetching " + self.project
+            with open("archive/" + self.project, "w") as f:
+                response = requests.get(self.url, stream=True)
+                total_length = response.headers.get('content-length')
+                if total_length is None: # no content length header
+                    f.write(response.content)
+                else:
+                    dl = 0
+                    total_length = int(total_length)
+                    for data in response.iter_content(chunk_size=4096):
+                        dl += len(data)
+                        f.write(data)
+                        done = int(50 * dl / total_length)
+                        sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )
+                        sys.stdout.flush()
+                        ERASE_LINE = '\x1b[2K\r'
+                        sys.stdout.write(ERASE_LINE)
+        if self.type is "git":
+            print "Fetching " + self.project
+            print commands.getoutput("git clone " + self.url + " " + self.project)
+
+def buildDeps():
+    if not os.path.exists("archive"):
+        os.makedirs("archive")
+        alsa = Deps("alsa-lib.tar.gz", "alsa-lib","http://www.alsa-project.org/snapshot/files/alsa-lib-1.1.4.1.0.g5bcf4.tar.bz2", "archive")
+        mpg123 = Deps("mpg123.tar.bz2", "mpg123" ,"http://www.mpg123.de/download/mpg123-1.25.0.tar.bz2", "archive")
+        paudio = Deps("portaudio.tar.gz", "portaudio","http://portaudio.com/archives/pa_stable_v190600_20161030.tgz", "archive")
+        alsa.fetch()
+        mpg123.fetch()
+        paudio.fetch()
+    if not os.path.exists("deps"):
+        os.makedirs("deps")
+        alsa.extract()
+        mpg123.extract()
+        paudio.extract()
+    if not os.path.exists("lib"):
+        os.makedirs("lib")
+        print "Building alsa-lib"
+        commands.getoutput("cd deps/alsa-lib/ && ./configure --enable-static --enable-shared=no && make -j 8 && cp src/.libs/libasound.a ../../lib/")
+        print "Building mpg123"
+        commands.getoutput("cd deps/mpg123/ && ./configure --enable-static --enable-shared=no && make -j 8 && cp src/libmpg123/.libs/libmpg123.a ../../lib/")
+        print "Building portaudio"
+        commands.getoutput("cd deps/portaudio/ && ./configure --with-jack=no --enable-static --enable-shared=no && make -j 8 && cp lib/.libs/libportaudio.a ../../lib/")
+
+def buildMppp():
+    print "Building mppp"
+    commands.getoutput("ninja")
+
+args = sys.argv
+if __name__ == "__main__" :
+    if len(args) < 2 :
+        buildDeps()
+        buildMppp()
+        print "Build Done"
+    elif args[1] == "mppp":
+        buildMppp()
+    elif args[1] == "deps":
+        buildDeps()

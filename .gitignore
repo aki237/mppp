@@ -1,0 +1,7 @@
+**lib
+**mppp
+lib
+archive
+deps
+.ninja_deps
+.ninja_log
