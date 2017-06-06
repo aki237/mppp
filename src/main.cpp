@@ -15,47 +15,20 @@
 #include <iostream>
 #include <stdio.h>
 #include <thread>
-#include "Device.hpp"
-#include "MPEGCodec.hpp"
-#include "Codec.hpp"
-#include "Duration.hpp"
-
-void PrintDuration(MPEGCodec* mpgh) {
-  //MPEGCodec* mpgh = (MPEGCodec*) mpg;
-  while (mpgh->ended()) {
-    Duration d;
-    d << mpgh->getElapsed();
-    std::string sep = ":";
-    if (d.getSeconds() < 10){
-      sep = ":0";
-    }
-    std::cout << "\rElapsed : " << d.getMinutes() << sep << d.getSeconds() << std::flush;
-  }
-  std::cout << std::endl;
-  pthread_exit(nullptr);
-}
+#include "Player.hpp"
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
+  if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " [filename.mp3]" << std::endl;
     return 255;
   }
   std::cout << "MP3 Player" << std::endl;
-  Device* dev = Device::getInstance();
-  std::string filename = std::string(argv[1]);
-  MPEGCodec mpg(filename);
-  PCMData pdata;
-  std::thread thread (PrintDuration, &mpg);
-  while(mpg.getFrame(&pdata)) {
-    if (pdata.data == nullptr) {
-      std::cerr << "Corrupt data" << std::endl;
-      break;
-    }
-    dev->write(pdata.data, pdata.len);
+  Player p;
+  for (int i = 1 ; i < argc; i++) {
+    std::string filename = std::string(argv[i]);
+    p.load(filename);
+    p.start();
   }
-
-  thread.join();
-  dev->closeInstance();
-
+  
   return EXIT_SUCCESS;
 }
