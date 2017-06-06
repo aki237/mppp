@@ -18,23 +18,17 @@
 MPEGCodec::MPEGCodec(std::string filename) : _filename(filename),
                                              Codec("mpg123"){
   mpg123_init();
-  int err;
-  _mh =mpg123_new(NULL, &err);
-  _buffer_size = mpg123_outblock(_mh);
-  _buffer = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
-  if (mpg123_open(_mh, _filename.c_str()) != MPG123_OK) {
-    std::cerr << "Unable to open the file : "  << _filename << std::endl;
-    return;
-  }
-  int channels, encoding;
-  mpg123_getformat(_mh, &_srate, &channels, &encoding);
-  float dur = mpg123_framelength(_mh) * mpg123_tpf(_mh);
-  _counter = 0;
-  _is_not_done = true;
-  _elapsed = 0;
+  open(filename);
+}
+
+MPEGCodec::MPEGCodec() : Codec("mpg123") {
+  mpg123_init();
 }
 
 bool MPEGCodec::getFrame(PCMData* d) {
+  if (_mh == nullptr) {
+    return false;
+  }
   int out = mpg123_read(_mh, _buffer, _buffer_size, &_done);
   _is_not_done = (out == MPG123_OK);
   d->data = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
@@ -55,6 +49,23 @@ float MPEGCodec::getDuration() {
 
 bool MPEGCodec::ended() {
   return _is_not_done;
+}
+
+void MPEGCodec::open(std::string filename) {
+  _filename = filename;
+  int err;
+  _mh =mpg123_new(NULL, &err);
+  _buffer_size = mpg123_outblock(_mh);
+  _buffer = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
+  if (mpg123_open(_mh, _filename.c_str()) != MPG123_OK) {
+    std::cerr << "Unable to open the file : "  << _filename << std::endl;
+    return;
+  }
+  int channels, encoding;
+  mpg123_getformat(_mh, &_srate, &channels, &encoding);
+  _counter = 0;
+  _is_not_done = true;
+  _elapsed = 0;
 }
 
 MPEGCodec::~MPEGCodec() {

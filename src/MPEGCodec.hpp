@@ -32,11 +32,13 @@ private:
   std::string _filename;
 public:
   MPEGCodec(std::string);
+  MPEGCodec();
   ~MPEGCodec();
   bool getFrame(PCMData*);
   float getElapsed();
   float getDuration();
   bool ended();
+  void open(std::string);
 };
 
 #endif // MPEDCODEC_HPP
