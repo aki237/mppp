@@ -7,9 +7,10 @@ rule link
      command = cd lib/ && ar -x libid3v2.a && ar -x libasound.a && ar -x libportaudio.a && ar -x libmpg123.a && ar -qc ../libmppp.a  *.o && rm *.o && cd .. && g++ $in -o $out $cflags libmppp.a && rm -rf libmppp.a && rm *.o -rf
 
 build Duration.o : cc src/Duration.cpp
+build Player.o : cc src/Player.cpp
 build MPEGCodec.o : cc src/MPEGCodec.cpp
 build Device.o : cc src/Device.cpp
 build main.o : cc src/main.cpp
-build mppp : link Duration.o MPEGCodec.o Device.o main.o
+build mppp : link Duration.o Player.o MPEGCodec.o Device.o main.o
 
 default mppp
