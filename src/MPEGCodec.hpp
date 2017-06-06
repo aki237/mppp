@@ -26,12 +26,17 @@ private:
   unsigned int _counter;
   size_t _buffer_size;
   size_t _done;
-  bool _is_done;
+  bool _is_not_done;
+  long _srate;
+  float _elapsed;
   std::string _filename;
 public:
   MPEGCodec(std::string);
   ~MPEGCodec();
   bool getFrame(PCMData*);
+  float getElapsed();
+  float getDuration();
+  bool ended();
 };
 
 #endif // MPEDCODEC_HPP

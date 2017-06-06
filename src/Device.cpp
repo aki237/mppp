@@ -31,24 +31,24 @@ Device* Device::getInstance() {
   oparams.hostApiSpecificStreamInfo = NULL;
   // Set up PortAudio 16-bit 44.1kHz stereo output
   PaError err = Pa_OpenStream(&(dev->stream),
-  nullptr,
-  &oparams,
-  44100, // cbc
-  0, // cbc
-  paClipOff,
-  nullptr,
-  nullptr
-);
-if( err != paNoError ){
-  std::cout << "Some Error In opening the device : " << Pa_GetErrorText(err) << std::endl;
-  return nullptr;
-}
-err = Pa_StartStream( dev->stream );
-if( err != paNoError ) {
-  std::cout << "Some Error In starting the stream : " << Pa_GetErrorText(err) << std::endl;
-  return nullptr;
-}
-return dev;
+                              nullptr,
+                              &oparams,
+                              44100, // cbc
+                              0, // cbc
+                              paClipOff,
+                              nullptr,
+                              nullptr
+                              );
+  if( err != paNoError ){
+    std::cout << "Some Error In opening the device : " << Pa_GetErrorText(err) << std::endl;
+    return nullptr;
+  }
+  err = Pa_StartStream( dev->stream );
+  if( err != paNoError ) {
+    std::cout << "Some Error In starting the stream : " << Pa_GetErrorText(err) << std::endl;
+    return nullptr;
+  }
+  return dev;
 }
 
 void Device::closeInstance() {

@@ -14,43 +14,52 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "MPEGCodec.hpp"
 #include <cstring>
-#include "Duration.hpp"
 
 MPEGCodec::MPEGCodec(std::string filename) : _filename(filename),
-Codec("mpg123"){
-	mpg123_init();
-	int err;
-	_mh =mpg123_new(NULL, &err);
-	_buffer_size = mpg123_outblock(_mh);
-	_buffer = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
-	if (mpg123_open(_mh, _filename.c_str()) != MPG123_OK) {
-		std::cerr << "Unable to open the file : "  << _filename << std::endl;
-		return;
-	}
-	int channels, encoding;
-	long rate;
-	mpg123_getformat(_mh, &rate, &channels, &encoding);
-	float dur = mpg123_framelength(_mh) * mpg123_tpf(_mh);
-	Duration d;
-	d << dur;
-	std::cout << "Song's Total lenght : " << d.getMinutes() << " : " << d.getSeconds()  << std::endl;
-	_counter = 0;
-	_is_done = false;
+                                             Codec("mpg123"){
+  mpg123_init();
+  int err;
+  _mh =mpg123_new(NULL, &err);
+  _buffer_size = mpg123_outblock(_mh);
+  _buffer = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
+  if (mpg123_open(_mh, _filename.c_str()) != MPG123_OK) {
+    std::cerr << "Unable to open the file : "  << _filename << std::endl;
+    return;
+  }
+  int channels, encoding;
+  mpg123_getformat(_mh, &_srate, &channels, &encoding);
+  float dur = mpg123_framelength(_mh) * mpg123_tpf(_mh);
+  _counter = 0;
+  _is_not_done = true;
+  _elapsed = 0;
 }
 
 bool MPEGCodec::getFrame(PCMData* d) {
-	int out = mpg123_read(_mh, _buffer, _buffer_size, &_done);
-	bool readOk = (out == MPG123_OK);
-	d->data = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
-	std::memcpy(d->data, _buffer, _buffer_size * sizeof(unsigned char));
-	d->len = _done/4;
-	d->duration = 0;
-	return readOk;
+  int out = mpg123_read(_mh, _buffer, _buffer_size, &_done);
+  _is_not_done = (out == MPG123_OK);
+  d->data = (unsigned char*)malloc(_buffer_size * sizeof(unsigned char));
+  std::memcpy(d->data, _buffer, _buffer_size * sizeof(unsigned char));
+  d->len = _done/4;
+  d->duration = 0;
+  _elapsed += (_done/4)/(float)_srate;
+  return _is_not_done;
+}
+
+float MPEGCodec::getElapsed() {
+  return _elapsed;
+}
+
+float MPEGCodec::getDuration() {
+  return (float) mpg123_tpf(_mh);
+}
+
+bool MPEGCodec::ended() {
+  return _is_not_done;
 }
 
 MPEGCodec::~MPEGCodec() {
-	free(_buffer);
-	mpg123_close(_mh);
-	mpg123_delete(_mh);
-	mpg123_exit();
+  free(_buffer);
+  mpg123_close(_mh);
+  mpg123_delete(_mh);
+  mpg123_exit();
 }

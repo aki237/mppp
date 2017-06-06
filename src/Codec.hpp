@@ -33,6 +33,9 @@ public:
 
   // interface virtual functions
   virtual bool getFrame(PCMData*) = 0;
+  virtual float getElapsed() = 0;
+  virtual float getDuration() = 0;
+  virtual bool  ended() = 0;
 protected:
   std::string _name;
 };
