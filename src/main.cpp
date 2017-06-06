@@ -14,9 +14,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <stdio.h>
+#include <thread>
 #include "Device.hpp"
 #include "MPEGCodec.hpp"
 #include "Codec.hpp"
+#include "Duration.hpp"
+
+void PrintDuration(MPEGCodec* mpgh) {
+  //MPEGCodec* mpgh = (MPEGCodec*) mpg;
+  while (mpgh->ended()) {
+    Duration d;
+    d << mpgh->getElapsed();
+    std::string sep = ":";
+    if (d.getSeconds() < 10){
+      sep = ":0";
+    }
+    std::cout << "\rElapsed : " << d.getMinutes() << sep << d.getSeconds() << std::flush;
+  }
+  std::cout << std::endl;
+  pthread_exit(nullptr);
+}
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -28,6 +45,7 @@ int main(int argc, char **argv) {
   std::string filename = std::string(argv[1]);
   MPEGCodec mpg(filename);
   PCMData pdata;
+  std::thread thread (PrintDuration, &mpg);
   while(mpg.getFrame(&pdata)) {
     if (pdata.data == nullptr) {
       std::cerr << "Corrupt data" << std::endl;
@@ -36,6 +54,7 @@ int main(int argc, char **argv) {
     dev->write(pdata.data, pdata.len);
   }
 
+  thread.join();
   dev->closeInstance();
 
   return EXIT_SUCCESS;
