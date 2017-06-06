@@ -15,14 +15,12 @@
 #include <iostream>
 #include "Device.hpp"
 
-Device* Device::dev = nullptr;
-
-Device* Device::getInstance() {
-
-  if (dev != nullptr) {
-    return dev;
+Device::Device() {
+  PaError err = Pa_Initialize();
+  if( err != paNoError ) {
+    std::cout << "Some Error In initializing portaudio : " << Pa_GetErrorText(err) << std::endl;
+    return;
   }
-  dev = new Device;
   PaStreamParameters oparams;
   oparams.device = Pa_GetDefaultOutputDevice(); /* default output device */
   oparams.channelCount = 2; // cbc
@@ -30,36 +28,41 @@ Device* Device::getInstance() {
   oparams.suggestedLatency = Pa_GetDeviceInfo( oparams.device )->defaultHighOutputLatency;
   oparams.hostApiSpecificStreamInfo = NULL;
   // Set up PortAudio 16-bit 44.1kHz stereo output
-  PaError err = Pa_OpenStream(&(dev->stream),
-                              nullptr,
-                              &oparams,
-                              44100, // cbc
-                              0, // cbc
-                              paClipOff,
-                              nullptr,
-                              nullptr
-                              );
+  err = Pa_OpenStream(&(stream),
+                      nullptr,
+                      &oparams,
+                      44100, // cbc
+                      0, // cbc
+                      paClipOff,
+                      nullptr,
+                      nullptr
+                      );
   if( err != paNoError ){
     std::cout << "Some Error In opening the device : " << Pa_GetErrorText(err) << std::endl;
-    return nullptr;
   }
-  err = Pa_StartStream( dev->stream );
+  err = Pa_StartStream( stream );
   if( err != paNoError ) {
     std::cout << "Some Error In starting the stream : " << Pa_GetErrorText(err) << std::endl;
-    return nullptr;
   }
-  return dev;
 }
 
-void Device::closeInstance() {
+bool Device::write(void* buffer, unsigned long samples) {
+  PaError err = Pa_WriteStream(stream, buffer, samples);
+  if (err != paNoError) {
+    std::cout << "Some Error while playing : " << Pa_GetErrorText(err) << std::endl;
+    return false;
+  }
+  return true;
+}
+
+Device::~Device() {
   std::cout << "Killing the instance" << std::endl;
-  Device* d = getInstance();
-  PaError err = Pa_StopStream( d->stream );
+  PaError err = Pa_StopStream( stream );
   if( err != paNoError ) {
     std::cout << "Some Error in stopping the stream : " << Pa_GetErrorText(err) << std::endl;
     return;
   }
-  err = Pa_CloseStream( d->stream );
+  err = Pa_CloseStream( stream );
   if( err != paNoError ) {
     std::cout << "Some Error In closing the device : " << Pa_GetErrorText(err) << std::endl;
     return;
@@ -69,16 +72,4 @@ void Device::closeInstance() {
     std::cout << "Some Error In closing the device : " << Pa_GetErrorText(err) << std::endl;
     return;
   }
-}
-
-bool Device::write(void* buffer, unsigned long samples) {
-  if (dev == nullptr) {
-    dev = getInstance();
-  }
-  PaError err = Pa_WriteStream(dev->stream, buffer, samples);
-  if (err != paNoError) {
-    std::cout << "Some Error while playing : " << Pa_GetErrorText(err) << std::endl;
-    return false;
-  }
-  return true;
 }

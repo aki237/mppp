@@ -19,18 +19,10 @@
 
 class Device {
 private:
-  static Device* dev;
   PaStream* stream;
-  Device(){
-    PaError err = Pa_Initialize();
-    if( err != paNoError ) {
-      std::cout << "Some Error In initializing portaudio : " << Pa_GetErrorText(err) << std::endl;
-      return;
-    }
-  }
 public:
-  static Device* getInstance();
-  static void closeInstance();
-  static bool write(void*, unsigned long);
+  Device();
+  bool write(void*, unsigned long);
+  ~Device();
 };
 #endif // DEVICE_HPP
